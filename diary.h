@@ -3,8 +3,8 @@
 
 #include <time.h>
 
-#define DATE_SIZE 20
-#define TIME_SIZE 20
+#define DATE_SIZE 50
+#define TIME_SIZE 50
 #define NAME_SIZE 500
 
 void delay(int number_of_seconds)
@@ -45,6 +45,23 @@ int HASH2(char* key)
 }
 
 
+void show_Time() { // prints the current date and time
+    // Get the current time
+    time_t current_time = time(NULL);
+
+    // Convert the time to a string using the desired format
+    char date_string[20];
+    strftime(date_string, 20, "%d-%m-%Y", localtime(&current_time));
+
+    char time_string[10];
+    strftime(time_string, 10, "%I:%M %p", localtime(&current_time));
+
+    // Print the date string
+    printf("The current date is: %s\n", date_string);
+    printf("The current time is: %s\n\n", time_string);
+}
+
+
 void setpass()
 {
     FILE *st;
@@ -66,29 +83,33 @@ void setpass()
 void add_record()
 {
     system("cls");
-    time_t tm2;
-    time(&tm2);
-    printf("Current Date/Time = %s\n\n", ctime(&tm2));
+    show_Time();
 
-    char date[DATE_SIZE], time[TIME_SIZE], keyword[NAME_SIZE];
-    printf("Enter the date (dd-mm-yyyy): ");
-    fflush(stdin);
-    gets(date);
+    char date[DATE_SIZE], Time[TIME_SIZE], keyword[NAME_SIZE];
+
+    // Get the current time
+    time_t current_time = time(NULL);
+    strftime(date, DATE_SIZE, "%d-%m-%Y", localtime(&current_time));
+    strftime(Time, TIME_SIZE, "%I:%M %p", localtime(&current_time));
+
+    if (strcmp(date, "q") == 0) return; // for going back
+
     FILE* rec_f;
     rec_f = fopen(date, "a+");
     struct record rec;
 
-    printf("Enter the time [in 24 hour format] (hh-mm): ");
+     fflush(stdin);
+    strcpy(rec.time, Time);
     fflush(stdin);
-    gets(rec.time);
     printf("Enter the title: ");
     fflush(stdin);
     gets(rec.title);
     printf("Enter the note: (press ENTER when finished) \n");
     fflush(stdin);
     gets(rec.note);
+    fflush(stdin);
 
-    fwrite(&rec, sizeof(rec), 1, rec_f);
+    fwrite(&rec, sizeof(struct record), 1, rec_f);
     fclose(rec_f);
     printf("Record was added successfully.\n");
 }
@@ -97,17 +118,17 @@ void add_record()
 void view_record()
 {
     system("cls");
-    time_t tm2;
-    time(&tm2);
-    printf("Current Date/Time = %s\n\n", ctime(&tm2));
+    show_Time();
 
     char date[DATE_SIZE], time[TIME_SIZE], keyword[NAME_SIZE];
-    printf("Enter the date (dd-mm-yyyy): ");
+    printf("Enter the date (dd-mm-yyyy) (type 'q' return): ");
     fflush(stdin);
     //gets(date);
     scanf("%s", date);
-    FILE* rec_f;
-    rec_f = fopen(date, "r+");
+
+    if (strcmp(date, "q") == 0) return; // for going back
+
+    FILE* rec_f = fopen(date, "r");
     struct record rec;
 
     if (rec_f == NULL)
@@ -118,31 +139,13 @@ void view_record()
     else
     {
         printf("Displaying the record for the date %s :\n\n\n", date);
-        while(fread(&rec, sizeof(rec), 1, rec_f) == 1)
+        while(fread(&rec, sizeof(struct record), 1, rec_f))
         {
-            printf("%s: %s\n\n", rec.time, rec.title);
-            int len=0;
-            int cnt=0;
-
-            /*
-            while (rec.note[len] != '\0')
-            {
-                if (cnt > 50 && rec.note[len] == ' ')
-                {
-                    printf("\n");
-                    cnt = 0;
-                }
-                else
-                {
-                    printf("%c", rec.note[len]);
-                    cnt++;
-                }
-                len++;
-
-            }
-            */
-
-            printf("\t%s\n", rec.note);
+            //printf("%s: %s\n\n", rec.time, rec.title);
+            //printf("\t%s\n", rec.note);
+            puts(rec.time);
+            puts(rec.title);
+            puts(rec.note);
             printf("\n\n\n");
         }
         printf("\n\n");
@@ -156,14 +159,15 @@ void view_record()
 void modify_record()
 {
     system("cls");
-    time_t tm2;
-    time(&tm2);
-    printf("Current Date/Time = %s\n\n", ctime(&tm2));
+    show_Time();
 
     char date[DATE_SIZE], time[TIME_SIZE], keyword[NAME_SIZE];
-    printf("Enter the date (dd-mm-yyyy): ");
+    printf("Enter the date (dd-mm-yyyy) (type 'q' return): ");
     fflush(stdin);
     gets(date);
+
+    if (strcmp(date, "q") == 0) return; // for going back
+
     FILE* rec_f;
     rec_f = fopen(date, "r+");
     struct record rec;
@@ -199,14 +203,15 @@ void modify_record()
 void delete_record()
 {
     system("cls");
-    time_t tm2;
-    time(&tm2);
-    printf("Current Date/Time = %s\n\n", ctime(&tm2));
+    show_Time();
 
     char date[DATE_SIZE], time[TIME_SIZE], keyword[NAME_SIZE];
-    printf("Enter the date (dd-mm-yyyy): ");
+    printf("Enter the date (dd-mm-yyyy) (type 'q' return): ");
     fflush(stdin);
     gets(date);
+
+    if (strcmp(date, "q") == 0) return; // for going back
+
     FILE* rec_f;
     rec_f = fopen(date, "r+");
 
@@ -270,7 +275,27 @@ void delete_record()
 void password_change()
 {
     system("cls");
-    printf("Password was changed successfully.\n");
+    printf("Enter old password: ");
+    fflush(stdin);
+    char tmp[30];
+    int a, b;
+    gets(tmp);
+    a = HASH(tmp);
+
+    FILE *fp = fopen("pss", "r");
+    fread(&b, sizeof(b), 1, fp);
+    fclose(fp);
+
+    if (a == b) {
+        printf("Enter new password: ");
+        fflush(stdin);
+        setpass();
+        printf("Password was changed successfully.\n");
+    }
+    else {
+        printf("Password didn't match!\n");
+    }
+    delay(1);
 }
 
 
@@ -279,18 +304,17 @@ void menu()
     int flag = 1;
     while (flag)
     {
-        time_t tm;
-        time(&tm);
-
         system("cls");
-        printf("\nCurrent Date/Time = %s\n\n", ctime(&tm));
-        printf("Enter your choice: \n");
+        show_Time();
+
+        printf(">> Enter your choice: \n");
         printf("1. Add Record\n");
         printf("2. View Record\n");
         printf("3. Modify Record\n");
         printf("4. Delete Record\n");
         printf("5. Change Password\n");
         printf("6. Log Out\n");
+        printf(">> Choice: ");
 
 
         int choice;

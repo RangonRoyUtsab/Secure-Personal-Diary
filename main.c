@@ -18,39 +18,41 @@ int main()
         FILE *fp = fopen("pss", "r");
 
 
-        printf("WELCOME TO YOUR SECURE PERSONAL DIARY\n\n");
-        printf("LOGIN MENU: \n\n");
+        printf(">> WELCOME TO YOUR SECURE PERSONAL DIARY\n\n");
+        printf(">> LOGIN MENU: \n\n");
         if (fp == NULL)
         {
             fclose(fp);
-            printf("SET A NEW PASSWORD: ");
+            printf(">> SET A NEW PASSWORD: ");
 
             //fflush(stdin);
             //gets(s);
             setpass();
-            printf("Password set successfully! \nPress any key to continue");
+            printf(">> Password set successfully! \nPress any key to continue");
             getch();
             continue;
         }
 
-        printf("ENTER PASSWORD (Type \"quit\" to exit): ");
+        printf(">> ENTER PASSWORD (Type \"q\" to exit): ");
+        fflush(stdin);
         gets(s);
 
-        if (strcmp(s, "quit") == 0) break;
+        if (strcmp(s, "q") == 0) break;
 
         a = HASH(s);
         //fprintf(fp,"%lld\n", h);
         //puts(s);
         //fscanf(fp, "%lld", &b);
         fread(&b, sizeof(b), 1, fp);
+        fclose(fp);
 
         if (a == b) {
-            printf("Password matched!\n");
+            printf(">> Password matched!\n");
             delay(1);
             menu();
         }
         else {
-            printf("Wrong password. Try again.\n");
+            printf("!! Wrong password. Try again.\n");
             delay(1);
         }
         //getch();

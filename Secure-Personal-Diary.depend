@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1689110835 source:c:\users\rangon\codeblocksprojects\secure-personal-diary\main.c
+	<stdio.h>
+	<stdlib.h>
+	<conio.h>
+	<string.h>
+	<time.h>
+	"diary.h"
+
+1689115311 c:\users\rangon\codeblocksprojects\secure-personal-diary\diary.h
+	<time.h>
+
