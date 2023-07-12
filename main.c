@@ -3,7 +3,7 @@
 #include <conio.h>
 #include <string.h>
 #include <time.h>
-#include "diary.h"
+
 
 
 #define DATE_SIZE 50
