@@ -1,9 +1,8 @@
+#include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
 #include <string.h>
 #include <time.h>
-
 
 
 #define DATE_SIZE 50
@@ -14,48 +13,45 @@ typedef long long LL;
 
 int user_level = 0;
 
-
-
 void delay(int number_of_seconds)
 {
-    int milli_seconds = 1000 * number_of_seconds;
-    clock_t start_time = clock();
+    int     milli_seconds = 1000 * number_of_seconds;
+    clock_t start_time    = clock();
     while (clock() < start_time + milli_seconds)
         ;
 }
 
 struct record
 {
-    int privacy_level;
+    int  privacy_level;
     char time[TIME_SIZE];
-    //char title[NAME_SIZE];
+    // char title[NAME_SIZE];
     char note[NAME_SIZE];
 };
 
-int HASH(char* pass)
+int HASH(char *pass)
 {
     int n = strlen(pass);
-    int h=0;
-    for (int i=0; i<n; i++)
+    int h = 0;
+    for (int i = 0; i < n; i++)
     {
-        h += ((i+1)*pass[i]);
+        h += ((i + 1) * pass[i]);
     }
     return h;
 }
 
-int HASH2(char* key)
+int HASH2(char *key)
 {
     int n = strlen(key);
-    int h=0;
-    for (int i=0; i<n; i++)
+    int h = 0;
+    for (int i = 0; i < n; i++)
     {
-        h += ((i+1)*key[i]);
+        h += ((i + 1) * key[i]);
     }
-    return (h%2000005);
+    return (h % 2000005);
 }
 
-
-void show_Time()   // prints the current date and time
+void show_Time() // prints the current date and time
 {
     // Get the current time
     time_t current_time = time(NULL);
@@ -72,17 +68,14 @@ void show_Time()   // prints the current date and time
     printf("The current time is: %s\n\n", time_string);
 }
 
-
 void setpass()
 {
     printf(">> SET A NEW PASSWORD: ");
 
     FILE *f_pointer;
 
-    if (user_level == 2)
-        f_pointer = fopen("admin_pass", "w");
-    if (user_level == 1)
-        f_pointer = fopen("part_pass", "w");
+    if (user_level == 2) f_pointer = fopen("admin_pass", "w");
+    if (user_level == 1) f_pointer = fopen("part_pass", "w");
 
     if (f_pointer == NULL)
     {
@@ -115,31 +108,39 @@ void add_record()
     fflush(stdin);
 
     time_t current_time = time(NULL);
-    char date_string[DATE_SIZE], time_string[TIME_SIZE];
+    char   date_string[DATE_SIZE], time_string[TIME_SIZE];
     strftime(date_string, DATE_SIZE, "%d-%m-%Y", localtime(&current_time));
     strftime(time_string, TIME_SIZE, "%I:%M %p", localtime(&current_time));
 
     // display part start
-    FILE *f_pointer = fopen(date_string, "r");
+    FILE         *f_pointer = fopen(date_string, "r");
     struct record new_record;
 
     if (f_pointer == NULL)
     {
-        printf("No records added today.");
+        printf("No records added today.\n\n");
+
+        // save the date
+        FILE *date_file = fopen("available_records.txt", "a+");
+        fprintf(date_file, "\n");
+        fprintf(date_file, date_string);
+        fclose(date_file);
     }
     else
     {
-        int i=1;
+        int i = 1;
         printf("Currently added notes today: \n\n");
         while (fread(&new_record, sizeof(struct record), 1, f_pointer))
         {
             if (user_level >= new_record.privacy_level)
             {
-                printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+                printf("Note no. %d \nTime: %s \nNote: %s \n\n", i,
+                       new_record.time, new_record.note);
             }
             else
             {
-                // room for displaying a message that the current user does not have the required permission
+                // room for displaying a message that the current user does not
+                // have the required permission
             }
             i++;
         }
@@ -156,32 +157,36 @@ void add_record()
 
     // privacy settings
 
-    printf("Select the privacy type of your note: \n");
-    if (user_level >= 0)
-        printf("1. Public\n");
-    if (user_level >= 1)
-        printf("2. Protected\n");
-    if (user_level >= 2)
-        printf("3. Private\n");
-    int choice;
-    scanf("%d", &choice);
+    if (user_level > 0)
+    {
+        printf("Select the privacy type of your note: \n");
+        if (user_level >= 0) printf("1. Public\n");
+        if (user_level >= 1) printf("2. Protected\n");
+        if (user_level >= 2) printf("3. Private\n");
+        int choice;
+        scanf("%d", &choice);
 
-    switch(choice) {
-    case 1:
-        new_record.privacy_level = 0;
-        break;
-    case 2:
-        new_record.privacy_level = 1;
-        break;
-    case 3:
-        new_record.privacy_level = 2;
-        break;
-    default:
-        printf("Invalid choice. Exiting.\n");
-        delay(1);
-        return;
+        switch (choice)
+        {
+        case 1:
+            new_record.privacy_level = 0;
+            break;
+        case 2:
+            new_record.privacy_level = 1;
+            break;
+        case 3:
+            new_record.privacy_level = 2;
+            break;
+        default:
+            printf("Invalid choice. Exiting.\n");
+            delay(1);
+            return;
+        }
     }
-
+    else
+    {
+        new_record.privacy_level = 0;
+    }
 
     strcpy(new_record.time, time_string);
     printf("Enter the note: \n>> ");
@@ -191,12 +196,23 @@ void add_record()
     fclose(f_pointer);
 }
 
-
 void view_record()
 {
     system("cls");
     show_Time();
     fflush(stdin);
+
+    FILE *date_file = fopen("available_records.txt", "a+");
+    char  available_date[DATE_SIZE];
+    rewind(date_file);
+
+    printf("Currently available recorded date: \n");
+    while (fscanf(date_file, "%s", available_date) != EOF)
+    {
+        puts(available_date);
+    }
+    printf("\n");
+    fclose(date_file);
 
     char date_string[DATE_SIZE];
     printf("Enter the date: ");
@@ -211,22 +227,23 @@ void view_record()
     }
 
     struct record new_record;
-    int i=1;
+    int           i = 1;
     while (fread(&new_record, sizeof(struct record), 1, f_pointer))
     {
         if (user_level >= new_record.privacy_level)
         {
-            printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+            printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time,
+                   new_record.note);
         }
         else
         {
-            // room for displaying a message that the current user does not have the required permission
+            // room for displaying a message that the current user does not have
+            // the required permission
         }
         i++;
     }
     fclose(f_pointer);
 }
-
 
 void modify_record()
 {
@@ -248,16 +265,18 @@ void modify_record()
     }
 
     struct record new_record;
-    int i=1;
+    int           i = 1;
     while (fread(&new_record, sizeof(struct record), 1, f_pointer))
     {
         if (user_level >= new_record.privacy_level)
         {
-            printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+            printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time,
+                   new_record.note);
         }
         else
         {
-            // room for displaying a message that the current user does not have the required permission
+            // room for displaying a message that the current user does not have
+            // the required permission
         }
         i++;
     }
@@ -265,20 +284,20 @@ void modify_record()
 
     printf("Enter the no of note you want to modify: ");
     fflush(stdin);
-    int k;
+    int  k;
     char option;
     scanf("%d", &k);
 
     rewind(f_pointer);
-    char temp_name[] = "temp_file";
-    FILE *tmp = fopen(temp_name, "a");
+    char  temp_name[] = "temp_file";
+    FILE *tmp         = fopen(temp_name, "a");
     if (f_pointer == NULL)
     {
         printf("** System error. Exiting program. **\n");
         delay(1);
         exit(1);
     }
-    i=1;
+    i = 1;
     while (fread(&new_record, sizeof(struct record), 1, f_pointer))
     {
         if (i == k)
@@ -303,7 +322,6 @@ void modify_record()
                 gets(new_record.note);
                 fflush(stdin);
             }
-
         }
         fwrite(&new_record, sizeof(struct record), 1, tmp);
         i++;
@@ -312,9 +330,7 @@ void modify_record()
     fclose(f_pointer);
     remove(date_string);
     rename(temp_name, date_string);
-
 }
-
 
 void delete_record()
 {
@@ -329,12 +345,12 @@ void delete_record()
     remove(date_string);
 
     printf("** Record deleted successfully **\n");
-
 }
 void password_change()
 {
     system("cls");
-    if (user_level <= 0) {
+    if (user_level <= 0)
+    {
         printf("Sorry, this option is not applicable for the guest.\n");
         delay(1);
         return;
@@ -342,7 +358,7 @@ void password_change()
     printf("Enter old password: ");
     fflush(stdin);
     char tmp[30];
-    int a, b;
+    int  a, b;
     gets(tmp);
     a = HASH(tmp);
 
@@ -361,7 +377,6 @@ void password_change()
     delay(1);
 }
 
-
 void menu()
 {
     int flag = 1;
@@ -370,7 +385,8 @@ void menu()
         system("cls");
         show_Time();
         printf("Current User: ");
-        switch(user_level) {
+        switch (user_level)
+        {
         case 0:
             printf("Guest\n");
             break;
@@ -391,10 +407,9 @@ void menu()
         printf("6. Log Out\n");
         printf(">> Choice: ");
 
-
         int choice;
         scanf("%d", &choice);
-        switch(choice)
+        switch (choice)
         {
         case 1:
         {
@@ -433,7 +448,7 @@ void menu()
         }
         case 6:
         {
-            flag = 0;
+            flag       = 0;
             user_level = 0;
             printf("Press any key to continue.\n");
             break;
@@ -448,31 +463,24 @@ void menu()
     }
 }
 
-
-
-
 int main()
 {
-    int f=1;
-    again:
+    int f = 1;
+again:
     while (f)
     {
         system("cls");
         char s[100];
-        LL a, b;
-
-
+        LL   a, b;
 
         printf(">> WELCOME TO YOUR SECURE PERSONAL DIARY\n\n");
         printf(">> LOGIN MENU: \n\n");
-
 
         printf(">> SELECT USER: \n");
         printf(">> 1. Admin\n");
         printf(">> 2. Life Partner\n");
         printf(">> 3. Guest\n");
         printf(">> 4. Exit\n");
-
 
         int choice;
         scanf("%d", &choice);
@@ -494,9 +502,7 @@ int main()
             printf("Invalid Choice.\n");
             delay(1);
             goto again;
-
         }
-
 
         if (user_level == 0)
         {
@@ -519,7 +525,8 @@ int main()
                     continue;
                 }
             }
-            if (user_level == 1) {
+            if (user_level == 1)
+            {
                 fp = fopen("part_pass", "r");
 
                 if (fp == NULL)
@@ -530,9 +537,6 @@ int main()
                     continue;
                 }
             }
-
-
-
 
             printf(">> ENTER PASSWORD (Type \"q\" to exit): ");
             fflush(stdin);
