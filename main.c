@@ -10,6 +10,10 @@
 #define TIME_SIZE 50
 #define NAME_SIZE 500
 
+typedef long long LL;
+
+int user_level = 0;
+
 
 
 void delay(int number_of_seconds)
@@ -22,6 +26,7 @@ void delay(int number_of_seconds)
 
 struct record
 {
+    int privacy_level;
     char time[TIME_SIZE];
     //char title[NAME_SIZE];
     char note[NAME_SIZE];
@@ -73,7 +78,11 @@ void setpass()
     printf(">> SET A NEW PASSWORD: ");
 
     FILE *f_pointer;
-    f_pointer = fopen("password_file", "w");
+
+    if (user_level == 2)
+        f_pointer = fopen("admin_pass", "w");
+    if (user_level == 1)
+        f_pointer = fopen("part_pass", "w");
 
     if (f_pointer == NULL)
     {
@@ -124,7 +133,14 @@ void add_record()
         printf("Currently added notes today: \n\n");
         while (fread(&new_record, sizeof(struct record), 1, f_pointer))
         {
-            printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+            if (user_level >= new_record.privacy_level)
+            {
+                printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+            }
+            else
+            {
+                // room for displaying a message that the current user does not have the required permission
+            }
             i++;
         }
         fclose(f_pointer);
@@ -137,6 +153,35 @@ void add_record()
         printf("** Error creating record. **\n");
         exit(1);
     }
+
+    // privacy settings
+
+    printf("Select the privacy type of your note: \n");
+    if (user_level >= 0)
+        printf("1. Public\n");
+    if (user_level >= 1)
+        printf("2. Protected\n");
+    if (user_level >= 2)
+        printf("3. Private\n");
+    int choice;
+    scanf("%d", &choice);
+
+    switch(choice) {
+    case 1:
+        new_record.privacy_level = 0;
+        break;
+    case 2:
+        new_record.privacy_level = 1;
+        break;
+    case 3:
+        new_record.privacy_level = 2;
+        break;
+    default:
+        printf("Invalid choice. Exiting.\n");
+        delay(1);
+        return;
+    }
+
 
     strcpy(new_record.time, time_string);
     printf("Enter the note: \n>> ");
@@ -169,7 +214,14 @@ void view_record()
     int i=1;
     while (fread(&new_record, sizeof(struct record), 1, f_pointer))
     {
-        printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+        if (user_level >= new_record.privacy_level)
+        {
+            printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+        }
+        else
+        {
+            // room for displaying a message that the current user does not have the required permission
+        }
         i++;
     }
     fclose(f_pointer);
@@ -199,7 +251,14 @@ void modify_record()
     int i=1;
     while (fread(&new_record, sizeof(struct record), 1, f_pointer))
     {
-        printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+        if (user_level >= new_record.privacy_level)
+        {
+            printf("Note no. %d \nTime: %s \nNote: %s \n\n", i, new_record.time, new_record.note);
+        }
+        else
+        {
+            // room for displaying a message that the current user does not have the required permission
+        }
         i++;
     }
     // view part
@@ -275,6 +334,11 @@ void delete_record()
 void password_change()
 {
     system("cls");
+    if (user_level <= 0) {
+        printf("Sorry, this option is not applicable for the guest.\n");
+        delay(1);
+        return;
+    }
     printf("Enter old password: ");
     fflush(stdin);
     char tmp[30];
@@ -305,7 +369,19 @@ void menu()
     {
         system("cls");
         show_Time();
-
+        printf("Current User: ");
+        switch(user_level) {
+        case 0:
+            printf("Guest\n");
+            break;
+        case 1:
+            printf("Life Partner\n");
+            break;
+        case 2:
+            printf("Admin\n");
+            break;
+        }
+        printf("\n");
         printf(">> Enter your choice: \n");
         printf("1. Add Record\n");
         printf("2. View Record\n");
@@ -358,6 +434,7 @@ void menu()
         case 6:
         {
             flag = 0;
+            user_level = 0;
             printf("Press any key to continue.\n");
             break;
         }
@@ -376,45 +453,108 @@ void menu()
 
 int main()
 {
-
-    while (1)
+    int f=1;
+    again:
+    while (f)
     {
         system("cls");
         char s[100];
-        long long a, b;
-        FILE *fp = fopen("password_file", "r");
+        LL a, b;
+
 
 
         printf(">> WELCOME TO YOUR SECURE PERSONAL DIARY\n\n");
         printf(">> LOGIN MENU: \n\n");
-        if (fp == NULL)
+
+
+        printf(">> SELECT USER: \n");
+        printf(">> 1. Admin\n");
+        printf(">> 2. Life Partner\n");
+        printf(">> 3. Guest\n");
+        printf(">> 4. Exit\n");
+
+
+        int choice;
+        scanf("%d", &choice);
+
+        switch (choice)
         {
-            setpass();
-            printf(">> Press any key to continue");
-            getch();
-            continue;
+        case 1:
+            user_level = 2;
+            break;
+        case 2:
+            user_level = 1;
+            break;
+        case 3:
+            user_level = 0;
+            break;
+        case 4:
+            exit(1);
+        default:
+            printf("Invalid Choice.\n");
+            delay(1);
+            goto again;
+
         }
 
-        printf(">> ENTER PASSWORD (Type \"q\" to exit): ");
-        fflush(stdin);
-        gets(s);
 
-        if (strcmp(s, "q") == 0) break;
-
-        a = HASH(s);
-        fread(&b, sizeof(b), 1, fp);
-        fclose(fp);
-
-        if (a == b)
+        if (user_level == 0)
         {
-            printf(">> Password matched!\n");
-            delay(1);
             menu();
         }
+
         else
         {
-            printf("!! Wrong password. Try again.\n");
-            delay(1);
+            FILE *fp;
+
+            if (user_level == 2)
+            {
+                fp = fopen("admin_pass", "r");
+
+                if (fp == NULL)
+                {
+                    setpass();
+                    printf(">> Press any key to continue");
+                    getch();
+                    continue;
+                }
+            }
+            if (user_level == 1) {
+                fp = fopen("part_pass", "r");
+
+                if (fp == NULL)
+                {
+                    setpass();
+                    printf(">> Press any key to continue");
+                    getch();
+                    continue;
+                }
+            }
+
+
+
+
+            printf(">> ENTER PASSWORD (Type \"q\" to exit): ");
+            fflush(stdin);
+            gets(s);
+
+            if (strcmp(s, "q") == 0) break;
+
+            a = HASH(s);
+            fread(&b, sizeof(b), 1, fp);
+            fclose(fp);
+
+            if (a == b)
+            {
+                printf(">> Password matched!\n");
+                delay(1);
+                menu();
+            }
+            else
+            {
+                printf("!! Wrong password. Try again.\n");
+                delay(1);
+            }
         }
     }
     return 0;
